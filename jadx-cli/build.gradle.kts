@@ -1,7 +1,7 @@
 plugins {
-	id("jadx-java")
-	id("jadx-library")
-	id("application")
+    id("jadx-kotlin")
+    id("jadx-library")
+    id("application")
 
 	// use shadow only for application scripts, jar will be copied from jadx-gui
 	id("com.gradleup.shadow") version "8.3.6"
