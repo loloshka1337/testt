@@ -73,7 +73,7 @@ You can use jadx in your java projects, check details on [wiki page](https://git
 
 ### Build from source
 JDK 11 or higher must be installed:
-```
+```bash
 git clone https://github.com/skylot/jadx.git
 cd jadx
 ./gradlew dist
@@ -85,7 +85,7 @@ Scripts for run jadx will be placed in `build/jadx/bin`
 and also packed to `build/jadx-<version>.zip`
 
 ### Usage
-```
+```bash
 jadx[-gui] [command] [options] <input files> (.apk, .dex, .jar, .class, .smali, .zip, .aar, .arsc, .aab, .xapk, .apkm, .jadx.kts)
 commands (use '<command> --help' for command options):
   plugins	  - manage jadx plugins
@@ -219,7 +219,7 @@ Examples:
 These options also work in jadx-gui running from command line and override options from preferences' dialog
 
 Usage for `plugins` command
-```
+```bash
 usage: plugins [options]
 options:
   -i, --install <locationId>      - install plugin with locationId

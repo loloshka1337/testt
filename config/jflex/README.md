@@ -1,5 +1,5 @@
 Refer to the following instructions to modify and use to generate SmaliTokenMarker
 
-```shell
+```bash
 jflex SmaliTokenMaker.flex --skel skeleton.default
 ```
