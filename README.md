@@ -90,6 +90,8 @@ jadx[-gui] [command] [options] <input files> (.apk, .dex, .jar, .class, .smali, 
 commands (use '<command> --help' for command options):
   plugins	  - manage jadx plugins
   apkdiff         - compare two apk files
+  apkpatch        - apply patch from old and new apk files
+  assistant       - ask AI assistant via OpenAI API
   apkpatch        - apply patch from old modified apk to new apk
   assistant       - ask AI assistant (OpenAI API)
 
@@ -235,6 +237,27 @@ options:
 
 Usage for `apkdiff` command
 ```
+usage: apkdiff [options]
+options:
+  --old <path>  - old apk
+  --new <path>  - new apk
+  -h, --help    - print this help
+```
+Example:
+  jadx apkdiff --old app_v1.apk --new app_v2.apk
+
+Usage for `apkpatch` command
+```
+usage: apkpatch [options]
+options:
+  --old <path>      - old original apk
+  --old-mod <path>  - old modified apk
+  --new <path>      - new original apk
+  --out <path>      - output patched apk
+  -h, --help        - print this help
+```
+Example:
+  jadx apkpatch --old app_v1.apk --old-mod app_v1_mod.apk --new app_v2.apk --out patched.apk
 usage: apkdiff --old <old.apk> --new <new.apk>
 options:
   --old <old.apk>    - old apk
@@ -265,6 +288,13 @@ Usage for `assistant` command
 ```
 usage: assistant [options]
 options:
+  -q, --question <text>  - question text
+  --model <name>         - openai model id (default: gpt-3.5-turbo)
+  -h, --help             - print this help
+```
+Example:
+  jadx assistant -q "Explain this class"
+Requires `OPENAI_API_KEY` environment variable set with OpenAI API key.
   -q, --question <text>   - question text
   --model <id>            - openai model id (default: gpt-3.5-turbo)
   -h, --help              - print this help
