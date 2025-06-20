@@ -89,6 +89,9 @@ and also packed to `build/jadx-<version>.zip`
 jadx[-gui] [command] [options] <input files> (.apk, .dex, .jar, .class, .smali, .zip, .aar, .arsc, .aab, .xapk, .apkm, .jadx.kts)
 commands (use '<command> --help' for command options):
   plugins	  - manage jadx plugins
+  apkdiff         - compare two apk files
+  apkpatch        - apply patch from old modified apk to new apk
+  assistant       - ask AI assistant (OpenAI API)
 
 options:
   -d, --output-dir                       - output directory
@@ -228,6 +231,47 @@ options:
   --list-all                      - list all plugins including bundled and dropins
   --list-versions <locationId>    - fetch latest versions of plugin from locationId (will download all artefacts, limited to 10)
   -h, --help                      - print this help
+```
+
+Usage for `apkdiff` command
+```
+usage: apkdiff --old <old.apk> --new <new.apk>
+options:
+  --old <old.apk>    - old apk
+  --new <new.apk>    - new apk
+  -h, --help         - print this help
+```
+Example:
+```bash
+jadx apkdiff --old app_v1.apk --new app_v2.apk
+```
+
+Usage for `apkpatch` command
+```
+usage: apkpatch --old <orig-old.apk> --old-mod <modified-old.apk> --new <orig-new.apk> --out <patched.apk>
+options:
+  --old <orig-old.apk>     - old original apk
+  --old-mod <modified.apk> - old modified apk
+  --new <orig-new.apk>     - new original apk
+  --out <patched.apk>      - output patched apk
+  -h, --help               - print this help
+```
+Example:
+```bash
+jadx apkpatch --old old.apk --old-mod old_mod.apk --new new.apk --out patched.apk
+```
+
+Usage for `assistant` command
+```
+usage: assistant [options]
+options:
+  -q, --question <text>   - question text
+  --model <id>            - openai model id (default: gpt-3.5-turbo)
+  -h, --help              - print this help
+```
+Example:
+```bash
+jadx assistant -q "Summarize this class" --model gpt-4
 ```
 
 
