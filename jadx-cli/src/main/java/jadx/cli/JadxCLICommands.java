@@ -9,6 +9,7 @@ import jadx.cli.commands.CommandPlugins;
 import jadx.cli.commands.CommandApkDiff;
 import jadx.cli.commands.CommandApkPatch;
 import jadx.cli.commands.CommandAssistant;
+import jadx.cli.commands.CommandAdd;
 import jadx.cli.commands.ICommand;
 import jadx.core.utils.exceptions.JadxArgsValidateException;
 
@@ -20,6 +21,7 @@ public class JadxCLICommands {
                JadxCLICommands.register(new CommandApkDiff());
                JadxCLICommands.register(new CommandApkPatch());
                JadxCLICommands.register(new CommandAssistant());
+               JadxCLICommands.register(new CommandAdd());
        }
 
 	public static void register(ICommand command) {
