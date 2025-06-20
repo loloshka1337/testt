@@ -137,6 +137,9 @@ import jadx.gui.ui.dialog.ADBDialog;
 import jadx.gui.ui.dialog.AboutDialog;
 import jadx.gui.ui.dialog.CharsetDialog;
 import jadx.gui.ui.dialog.ExceptionDialog;
+import jadx.gui.ui.dialog.ApkDiffDialog;
+import jadx.gui.ui.dialog.ApkPatchDialog;
+import jadx.gui.ui.dialog.AssistantDialog;
 import jadx.gui.ui.dialog.GotoAddressDialog;
 import jadx.gui.ui.dialog.LogViewerDialog;
 import jadx.gui.ui.dialog.SearchDialog;
@@ -1214,10 +1217,16 @@ public class MainWindow extends JFrame {
 		JadxGuiAction backVariantAction = new JadxGuiAction(ActionModel.BACK_V, navController::navBack);
 		JadxGuiAction forwardAction = new JadxGuiAction(ActionModel.FORWARD, navController::navForward);
 		JadxGuiAction forwardVariantAction = new JadxGuiAction(ActionModel.FORWARD_V, navController::navForward);
-		JadxGuiAction quarkAction = new JadxGuiAction(ActionModel.QUARK,
-				() -> new QuarkDialog(MainWindow.this).setVisible(true));
-		JadxGuiAction openDeviceAction = new JadxGuiAction(ActionModel.OPEN_DEVICE,
-				() -> new ADBDialog(MainWindow.this).setVisible(true));
+                JadxGuiAction quarkAction = new JadxGuiAction(ActionModel.QUARK,
+                                () -> new QuarkDialog(MainWindow.this).setVisible(true));
+                JadxGuiAction openDeviceAction = new JadxGuiAction(ActionModel.OPEN_DEVICE,
+                                () -> new ADBDialog(MainWindow.this).setVisible(true));
+                JadxGuiAction apkDiffAction = new JadxGuiAction(ActionModel.APK_DIFF,
+                                () -> new ApkDiffDialog(MainWindow.this).setVisible(true));
+                JadxGuiAction apkPatchAction = new JadxGuiAction(ActionModel.APK_PATCH,
+                                () -> new ApkPatchDialog(MainWindow.this).setVisible(true));
+                JadxGuiAction assistantAction = new JadxGuiAction(ActionModel.AI_ASSISTANT,
+                                () -> new AssistantDialog(MainWindow.this).setVisible(true));
 
 		JMenu file = new JadxMenu(NLS.str("menu.file"), shortcutsController);
 		file.setMnemonic(KeyEvent.VK_F);
@@ -1274,9 +1283,12 @@ public class MainWindow extends JFrame {
 		tools.setMnemonic(KeyEvent.VK_T);
 		tools.add(decompileAllAction);
 		tools.add(resetCacheAction);
-		tools.add(deobfMenuItem);
-		tools.add(quarkAction);
-		tools.add(openDeviceAction);
+                tools.add(deobfMenuItem);
+                tools.add(quarkAction);
+                tools.add(openDeviceAction);
+                tools.add(apkDiffAction);
+                tools.add(apkPatchAction);
+                tools.add(assistantAction);
 
 		JMenu help = new JadxMenu(NLS.str("menu.help"), shortcutsController);
 		help.setMnemonic(KeyEvent.VK_H);
@@ -1376,12 +1388,15 @@ public class MainWindow extends JFrame {
 			exportAction.setEnabled(loaded);
 			saveProjectAsAction.setEnabled(loaded);
 			reloadAction.setEnabled(loaded);
-			decompileAllAction.setEnabled(loaded);
-			deobfAction.setEnabled(loaded);
-			quarkAction.setEnabled(loaded);
-			resetCacheAction.setEnabled(loaded);
-			return false;
-		});
+                        decompileAllAction.setEnabled(loaded);
+                        deobfAction.setEnabled(loaded);
+                        quarkAction.setEnabled(loaded);
+                        apkDiffAction.setEnabled(loaded);
+                        apkPatchAction.setEnabled(loaded);
+                        assistantAction.setEnabled(true);
+                        resetCacheAction.setEnabled(loaded);
+                        return false;
+                });
 	}
 
 	private void initUI() {
