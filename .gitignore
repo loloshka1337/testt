@@ -1,43 +1,20 @@
-# Eclipse files
-.classpath
-.project
-.settings/
-
-# IntelliJ Idea files
-.idea/
-.run/
-out/
-*.iml
-*.ipr
-*.iws
-.attach_pid*
-*.hprof
-
-**/.DS_Store
-
-bin/
-target/
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
 build/
-classes/
-idea/
-.gradle/
-.kotlin/
-node_modules/
-.vscode/
+dist/
+.pytest_cache/
+.venv/
+venv/
 
-jadx-output/
-*-tmp/
-**/tmp/
-*.jobf
-*.jadx
-
-*.class
-*.jar
-*.dump
+# Tool runtime output
+seo-audit-output/
 *.log
-*.cfg
-*.orig
-quark.json
+state.json
 
-cliff.toml
-jadx-gui/src/main/resources/logback.xml
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
