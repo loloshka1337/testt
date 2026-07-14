@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>seoaudit — {{ job.domain }}</title>
+<style>
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#0f1115;color:#e7e9ee;margin:0}
+  .wrap{max-width:640px;margin:0 auto;padding:40px 20px}
+  h1{font-size:1.4rem}
+  .status{font-size:1.1rem;padding:12px 14px;border-radius:9px;background:#181b22;border:1px solid #2b303b;margin:16px 0}
+  .spinner{display:inline-block;width:14px;height:14px;border:2px solid #4f8cff;border-top-color:transparent;border-radius:50%;animation:spin 1s linear infinite;vertical-align:middle;margin-right:8px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  a.btn{display:inline-block;margin-top:14px;background:#4f8cff;color:#fff;padding:10px 16px;border-radius:9px;text-decoration:none;font-weight:600}
+  pre{background:#181b22;border:1px solid #2b303b;border-radius:9px;padding:14px;overflow:auto;font-size:.85rem}
+  .err{color:#ffb3bb}
+  a{color:#4f8cff}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Audit — {{ job.domain }}</h1>
+  <p><a href="/">&larr; new audit</a></p>
+  <div class="status" id="status"><span class="spinner"></span> starting…</div>
+  <div id="result"></div>
+</div>
+<script>
+  const jobId = {{ job.id|tojson }};
+  async function poll(){
+    const r = await fetch(`/jobs/${jobId}/status`);
+    const d = await r.json();
+    const s = document.getElementById('status');
+    const res = document.getElementById('result');
+    if (d.status === 'running' || d.status === 'queued') {
+      s.innerHTML = `<span class="spinner"></span> ${d.status}…`;
+      setTimeout(poll, 1500);
+    } else if (d.status === 'done') {
+      s.textContent = '✔ ' + (d.message || 'Done');
+      let html = '<pre>' + JSON.stringify(d.stats, null, 2) + '</pre>';
+      if (d.has_report) html += `<a class="btn" href="/jobs/${jobId}/report" target="_blank">Open HTML report</a>`;
+      res.innerHTML = html;
+    } else {
+      s.innerHTML = '<span class="err">✖ ' + (d.message || 'Error') + '</span>';
+    }
+  }
+  poll();
+</script>
+</body>
+</html>
