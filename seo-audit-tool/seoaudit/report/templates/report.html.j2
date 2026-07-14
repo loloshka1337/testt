@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SEO-аудит — {{ report.domain }}</title>
+<style>
+  :root {
+    --bg: #0f1115; --card: #181b22; --fg: #e7e9ee; --muted: #9aa3b2;
+    --accent: #4f8cff; --border: #262b36;
+    --critical: #ff5c6c; --high: #ff9f43; --medium: #ffd15c; --low: #6fcf97; --info: #6aa9ff;
+  }
+  @media (prefers-color-scheme: light) {
+    :root { --bg:#f5f6f8; --card:#fff; --fg:#1a1c22; --muted:#5b6472; --border:#e3e6ec; }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+         background:var(--bg); color:var(--fg); line-height:1.5; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 32px 20px 80px; }
+  h1 { font-size: 1.7rem; margin: 0 0 4px; }
+  h2 { font-size: 1.25rem; margin: 40px 0 14px; border-bottom:1px solid var(--border); padding-bottom:8px; }
+  .sub { color: var(--muted); margin: 0 0 24px; }
+  .grid { display:grid; grid-template-columns: repeat(auto-fit,minmax(150px,1fr)); gap:14px; }
+  .card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:16px; }
+  .stat { font-size:1.9rem; font-weight:700; }
+  .stat.small { font-size:1.3rem; }
+  .label { color:var(--muted); font-size:.8rem; text-transform:uppercase; letter-spacing:.04em; }
+  table { width:100%; border-collapse:collapse; font-size:.9rem; }
+  th,td { text-align:left; padding:9px 10px; border-bottom:1px solid var(--border); vertical-align:top; }
+  th { color:var(--muted); font-weight:600; font-size:.78rem; text-transform:uppercase; letter-spacing:.03em; }
+  .badge { display:inline-block; padding:2px 8px; border-radius:999px; font-size:.72rem; font-weight:700;
+           color:#111; }
+  .b-critical{background:var(--critical);} .b-high{background:var(--high);} .b-medium{background:var(--medium);}
+  .b-low{background:var(--low);} .b-info{background:var(--info);}
+  .pill { display:inline-block; padding:2px 8px; border:1px solid var(--border); border-radius:6px;
+          font-size:.75rem; color:var(--muted); margin:2px 4px 2px 0; }
+  a { color:var(--accent); word-break:break-all; }
+  .url { font-family: ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.82rem; }
+  details { background:var(--card); border:1px solid var(--border); border-radius:10px; margin:8px 0; padding:6px 12px; }
+  summary { cursor:pointer; font-weight:600; }
+  .muted{color:var(--muted);}
+  .note { background:var(--card); border-left:3px solid var(--accent); border-radius:6px; padding:12px 14px; margin:14px 0; color:var(--muted); font-size:.86rem;}
+  .bar { height:8px; border-radius:6px; background:var(--border); overflow:hidden; }
+  .bar > span { display:block; height:100%; background:var(--accent); }
+  code { background:rgba(127,127,127,.15); padding:1px 5px; border-radius:4px; font-size:.82rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Аудит видимости в поиске</h1>
+  <p class="sub">
+    Домен <strong>{{ report.domain }}</strong> ·
+    сформировано {{ report.generated_at }} ·
+    версия v{{ report.tool_version }}
+  </p>
+
+  <div class="note">
+    Этот отчёт охватывает только <strong>{{ report.domain }}</strong>. Он предназначен для владельца
+    домена или авторизованного аудитора. Выводы носят рекомендательный характер — проверяйте перед действиями.
+  </div>
+
+  <h2>Сводка</h2>
+  <div class="grid">
+    <div class="card"><div class="label">Запросов выполнено</div><div class="stat">{{ report.dorks|length }}</div></div>
+    <div class="card"><div class="label">Найдено URL</div><div class="stat">{{ report.results|length }}</div></div>
+    <div class="card"><div class="label">Проанализировано страниц</div><div class="stat">{{ total_pages }}</div></div>
+    <div class="card"><div class="label">Индексируемых</div><div class="stat">{{ indexable }}</div></div>
+    <div class="card"><div class="label">Неиндексируемых</div><div class="stat">{{ not_indexable }}</div></div>
+    <div class="card"><div class="label">С проблемами</div><div class="stat">{{ with_issues }}</div></div>
+    <div class="card"><div class="label">Возможные утечки</div><div class="stat" style="color:var(--critical)">{{ with_leaks }}</div></div>
+    <div class="card"><div class="label">Рекомендаций</div><div class="stat">{{ report.recommendations|length }}</div></div>
+  </div>
+
+  <h2>Рекомендации по действиям</h2>
+  <div class="grid">
+    {% for action, n in action_counter.most_common() %}
+    <div class="card"><div class="label">{{ action }}</div><div class="stat small">{{ n }}</div></div>
+    {% else %}
+    <p class="muted">Рекомендаций не сформировано.</p>
+    {% endfor %}
+  </div>
+
+  {% if report.recommendations %}
+  <h2>Приоритизированные рекомендации</h2>
+  <table>
+    <thead><tr><th>Важн.</th><th>Действие</th><th>Объект</th><th>Рекомендация</th></tr></thead>
+    <tbody>
+    {% for r in report.recommendations %}
+      <tr>
+        <td><span class="badge b-{{ r.severity.value }}">{{ r.severity.value }}</span></td>
+        <td><span class="pill">{{ r.action.value }}</span></td>
+        <td class="url">
+          {% if r.scope == 'page' %}<a href="{{ r.target }}">{{ r.target }}</a>{% else %}{{ r.target }}{% endif %}
+        </td>
+        <td><strong>{{ r.title }}</strong><br><span class="muted">{{ r.detail }}</span></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
+  <h2>Кластеры страниц</h2>
+  <table>
+    <thead><tr><th>Кластер</th><th>Тип</th><th>Страниц</th></tr></thead>
+    <tbody>
+    {% for c in report.clusters %}
+      <tr><td>{{ c.name }}</td><td><code>{{ c.page_type }}</code></td><td>{{ c.urls|length }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+
+  {% if top_issues %}
+  <h2>Самые частые проблемы</h2>
+  <table>
+    <thead><tr><th>Код проблемы</th><th>Кол-во</th></tr></thead>
+    <tbody>
+    {% for code, n in top_issues %}
+      <tr><td><code>{{ code }}</code></td><td>{{ n }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
+  <h2>Страницы ({{ total_pages }})</h2>
+  {% for a in report.analyses %}
+  <details>
+    <summary>
+      {% if not a.indexable %}<span class="badge b-high">закрыта</span>{% endif %}
+      {% if a.leaks %}<span class="badge b-critical">утечка</span>{% endif %}
+      <span class="url">{{ a.url }}</span>
+      <span class="muted">— {{ a.status_code or '—' }} · {{ a.word_count }} слов</span>
+    </summary>
+    <div style="padding:8px 0">
+      <span class="pill">статус {{ a.status_code or 'н/д' }}</span>
+      <span class="pill">индексируема: {{ 'да' if a.indexable else 'нет' }}</span>
+      <span class="pill">robots index: {{ a.robots_index }}</span>
+      {% if a.canonical %}<span class="pill">canonical: {{ 'сама на себя' if a.canonical_is_self else a.canonical }}</span>{% endif %}
+      {% if a.redirect_chain|length > 1 %}<span class="pill">редиректов: {{ a.redirect_chain|length - 1 }}</span>{% endif %}
+      {% if a.title %}<div style="margin-top:6px"><strong>{{ a.title }}</strong></div>{% endif %}
+      {% if a.meta_description %}<div class="muted" style="font-size:.85rem">{{ a.meta_description }}</div>{% endif %}
+      {% if a.issues %}
+        <div style="margin-top:8px" class="label">Проблемы</div>
+        {% for i in a.issues %}
+          <div><span class="badge b-{{ i.severity.value }}">{{ i.severity.value }}</span>
+            <code>{{ i.code }}</code> — {{ i.message }}</div>
+        {% endfor %}
+      {% endif %}
+      {% if a.leaks %}
+        <div style="margin-top:8px" class="label" style="color:var(--critical)">Возможные утечки</div>
+        {% for i in a.leaks %}
+          <div><span class="badge b-{{ i.severity.value }}">{{ i.severity.value }}</span>
+            <code>{{ i.code }}</code> — {{ i.message }}</div>
+        {% endfor %}
+      {% endif %}
+    </div>
+  </details>
+  {% endfor %}
+
+  <h2>Использованные поисковые запросы</h2>
+  <table>
+    <thead><tr><th>Категория</th><th>Запрос</th><th>Зачем</th></tr></thead>
+    <tbody>
+    {% for d in report.dorks %}
+      <tr><td><code>{{ d.category }}</code></td><td class="url">{{ d.query }}</td><td class="muted">{{ d.rationale }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+
+  <p class="sub" style="margin-top:40px">
+    Сформировано seoaudit — «белым» аудитором видимости в поиске для одного домена.
+  </p>
+</div>
+</body>
+</html>

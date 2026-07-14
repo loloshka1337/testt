@@ -1,0 +1,45 @@
+[
+  {
+    "url": "https://example.com/",
+    "title": "Example Domain — Home",
+    "snippet": "Welcome to Example, the illustrative domain used in documentation.",
+    "position": 1,
+    "indexed_date": "2026-06-01"
+  },
+  {
+    "url": "https://example.com/blog/getting-started",
+    "title": "Getting started with Example",
+    "snippet": "A guide to getting started.",
+    "position": 2
+  },
+  {
+    "url": "https://example.com/blog/getting-started?utm_source=newsletter",
+    "title": "Getting started with Example",
+    "snippet": "A guide to getting started.",
+    "position": 5
+  },
+  {
+    "url": "https://example.com/admin/login",
+    "title": "Admin Login",
+    "snippet": "Sign in to the admin panel.",
+    "position": 8
+  },
+  {
+    "url": "https://example.com/search?q=shoes",
+    "title": "Search results for shoes",
+    "snippet": "Results...",
+    "position": 12
+  },
+  {
+    "url": "https://example.com/docs/api/v1",
+    "title": "API v1 reference",
+    "snippet": "Reference documentation for the v1 API.",
+    "position": 3
+  },
+  {
+    "url": "https://not-my-domain.com/example",
+    "title": "Off-domain page that must be dropped",
+    "snippet": "This should never appear in the report.",
+    "position": 20
+  }
+]

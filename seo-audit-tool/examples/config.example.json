@@ -1,0 +1,28 @@
+{
+  "domain": "example.com",
+  "include_subdomains": true,
+
+  "provider": "manual",
+  "manual_results_path": "examples/sample_results.json",
+  "max_dorks": 40,
+  "results_per_dork": 20,
+  "keywords": ["example", "documentation", "pricing"],
+  "seed_paths": ["blog", "docs", "shop"],
+  "dork_categories": ["coverage", "page_types", "content", "duplication", "exposure"],
+
+  "analyze_pages": true,
+  "max_pages": 100,
+  "respect_robots_txt": true,
+  "rate_limit_rps": 1.0,
+  "jitter": 0.4,
+  "concurrency": 4,
+  "rotate_user_agents": true,
+  "contact_email": "seo@example.com",
+
+  "duplicate_similarity": 0.9,
+
+  "output_dir": "seo-audit-output/example.com",
+  "report_formats": ["json", "html"],
+
+  "authorized": false
+}

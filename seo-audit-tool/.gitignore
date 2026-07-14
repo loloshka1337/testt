@@ -13,8 +13,3 @@ venv/
 seo-audit-output/
 *.log
 state.json
-
-# OS / editor
-.DS_Store
-.idea/
-.vscode/
