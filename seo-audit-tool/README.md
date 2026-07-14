@@ -1,73 +1,113 @@
-# seoaudit — SEO visibility audit & monitoring
+# seoaudit — SEO-аудит и мониторинг видимости в поиске
 
-A white-hat, **single-domain** tool for analysing how a site you own (or are
-authorised to audit) is represented in search engines. It generates scoped
-search queries, collects and parses the results, deeply analyses the discovered
-pages for technical SEO problems, clusters them by type, and produces
-prioritised recommendations with clean HTML/JSON (optionally PDF) reports.
+«Белый» инструмент для **одного домена**: анализирует, как ваш сайт (которым вы
+владеете или на аудит которого есть разрешение) представлен в поисковых системах.
+Генерирует поисковые запросы с ограничением по домену, собирает и разбирает
+результаты, глубоко анализирует найденные страницы на технические SEO-проблемы,
+кластеризует их по типам и формирует приоритизированные рекомендации с понятными
+отчётами в HTML/JSON (и, опционально, PDF).
 
-> ⚠️ **Authorised use only.** Every stage is locked to one target domain and the
-> tool refuses to run without an explicit authorisation flag. Use it exclusively
-> on properties you own or have written permission to audit.
+> ⚠️ **Только для авторизованного использования.** Каждый этап жёстко привязан к
+> одному целевому домену, и инструмент отказывается запускаться без явного
+> подтверждения полномочий. Используйте только на ресурсах, которыми владеете
+> или на аудит которых есть письменное разрешение.
 
 ---
 
-## Why this design is "white-hat"
+## Почему это «белый» подход
 
-These safeguards are enforced in code, not just documentation:
+Эти меры защиты реализованы в коде, а не только в документации:
 
-| Safeguard | Where |
+| Защита | Где |
 |---|---|
-| **Single-domain scoping** — every collected result and fetched page is validated against the one target domain; anything off-domain is dropped | `domain.py`, `collector.py`, `analyzer.py` |
-| **Explicit authorisation gate** — the pipeline raises unless `authorized=True` / `--i-am-authorized` | `pipeline.py`, `cli.py` |
-| **`robots.txt` respected** when crawling the owned domain | `http_client.py` |
-| **Polite rate limiting** with jitter, bounded concurrency, and hard page caps | `ratelimit.py`, `config.py` |
-| **API-first result collection** (Google Programmable Search / SerpApi / offline export) instead of scraping search engines | `search/` |
-| **Secrets never logged or embedded** in reports | `config.py` |
+| **Ограничение одним доменом** — каждый собранный результат и каждая загруженная страница проверяются по единственному целевому домену; всё «чужое» отбрасывается | `domain.py`, `collector.py`, `analyzer.py` |
+| **Явное подтверждение полномочий** — конвейер падает, если не задан `authorized=True` / `--i-am-authorized` | `pipeline.py`, `cli.py` |
+| **Соблюдение `robots.txt`** при обходе своего домена | `http_client.py` |
+| **Вежливое ограничение частоты** с джиттером, ограничением параллелизма и жёсткими лимитами | `ratelimit.py`, `config.py` |
+| **Сбор результатов через официальные API** (Google Programmable Search / SerpApi / офлайн-экспорт) вместо парсинга выдачи | `search/` |
+| **Секреты не логируются** и не попадают в отчёты | `config.py` |
 
-User-Agent rotation and request pacing are here to spread load and present an
-honest browser identity to *your own* server — not to defeat anti-abuse systems.
-
----
-
-## The four modules from the spec
-
-1. **Intelligent query ("dork") generation** — `dorks.py` builds a diverse,
-   deduplicated, reproducible set of `site:`-anchored queries across five
-   categories: `coverage`, `page_types`, `content`, `duplication`, `exposure`.
-   Categories are interleaved so even a small `--max-dorks` yields variety.
-2. **Collection & parsing** — `collector.py` runs each query through a pluggable
-   provider (`search/`), keeping URL, title, snippet, position and index date,
-   then scope-filters and de-duplicates by canonical URL.
-3. **Deep page analysis** — `analyzer.py` fetches each in-scope page and checks
-   HTTP status & redirect chains, `meta robots` / `X-Robots-Tag`, canonical
-   targets, thin content, on-page basics, near-duplicate fingerprints, and
-   scans for accidental information leaks.
-4. **Clustering, prioritisation & recommendations** — `cluster.py` groups pages
-   by type and emits a ranked action list: what to **index**, **deindex**,
-   **improve**, or **promote**.
-
-Plus: HTML + JSON (+ optional PDF) reports, a CLI, a local web UI, full logging,
-and resumable checkpointing so long runs survive interruption.
+Ротация User-Agent и паузы между запросами нужны для распределения нагрузки и
+честного представления браузера *вашему собственному* серверу — а не для обхода
+антибот-систем.
 
 ---
 
-## Install
+## Четыре модуля из ТЗ
+
+1. **Интеллектуальная генерация запросов («дорков»)** — `dorks.py` строит
+   разнообразный, дедуплицированный и воспроизводимый набор запросов с оператором
+   `site:` по пяти категориям: `coverage`, `page_types`, `content`, `duplication`,
+   `exposure`. Категории чередуются, поэтому даже при малом `--max-dorks`
+   получается разнообразие.
+2. **Сбор и парсинг** — `collector.py` прогоняет каждый запрос через подключаемый
+   провайдер (`search/`), сохраняя URL, заголовок, сниппет, позицию и дату
+   индексации, затем фильтрует по домену и дедуплицирует по каноническому URL.
+3. **Глубокий анализ страниц** — `analyzer.py` загружает каждую страницу в области
+   и проверяет HTTP-статус и цепочки редиректов, `meta robots` / `X-Robots-Tag`,
+   canonical, тонкий контент, базовые on-page элементы, отпечатки для поиска
+   почти-дубликатов и сканирует на случайные утечки информации.
+4. **Кластеризация, приоритизация и рекомендации** — `cluster.py` + `insights.py`
+   группируют страницы по типам и выдают ранжированный список действий:
+   что **индексировать**, **убрать из индекса**, **улучшить** или **продвигать**.
+
+Плюс: отчёты HTML + JSON (+ опционально PDF), CLI, локальный веб-интерфейс,
+полное логирование, атомарные возобновляемые чекпоинты и вежливое ограничение
+частоты с соблюдением `robots.txt`.
+
+---
+
+## Архитектура: что объединено/автоматизировано, а что отдельно
+
+Осознанное разделение по этапам действий:
+
+- **Сквозной автоматический конвейер** — `seoaudit.run_audit(config)` (обёртка над
+  `AuditPipeline`): генерация → сбор → анализ → **insights** → отчёты, с
+  чекпоинтами. Это путь «одной командой».
+- **Этап `insights` объединён** (`insights.py`, функция `build_insights`):
+  кластеризация + поиск дубликатов + генерация рекомендаций всегда выполняются
+  вместе и зависят друг от друга, поэтому автоматизированы как единый шаг.
+- **Оставлены отдельными переиспользуемыми функциями** — их часто нужно вызывать
+  самостоятельно:
+  - `seoaudit.generate_dorks(...)` — только генерация запросов (подкоманда `dorks`);
+  - провайдеры поиска (`search/`) — подключаемы независимо;
+  - `PageAnalyzer` — анализ произвольного списка URL;
+  - писатели отчётов (`report/`) — например, повторный рендер из сохранённого JSON.
+
+```python
+import seoaudit
+from seoaudit.config import Config
+
+report = seoaudit.run_audit(Config(
+    domain="example.com", provider="manual",
+    manual_results_path="examples/sample_results.json",
+    authorized=True,
+))
+
+# или по отдельным этапам:
+dorks = seoaudit.generate_dorks("example.com", keywords=["цена"])
+```
+
+---
+
+## Установка
 
 ```bash
 cd seo-audit-tool
-pip install -r requirements.txt      # or: pip install .
+pip install -r requirements.txt      # или: pip install .
 ```
 
-Requires Python 3.9+. Core deps: `requests`, `beautifulsoup4`, `jinja2`.
-The web UI additionally needs `flask`; PDF output optionally needs `weasyprint`.
+Требуется Python 3.9+. Основные зависимости: `requests`, `beautifulsoup4`,
+`jinja2`. Для веб-интерфейса дополнительно нужен `flask`; для PDF — опционально
+`weasyprint`.
 
 ---
 
-## Quick start (fully offline, no API keys)
+## Быстрый старт (полностью офлайн, без API-ключей)
 
-The `manual` provider reads results you exported yourself (e.g. from Google
-Search Console's Pages export) — the safest, 100% ToS-clean way to run it.
+Провайдер `manual` читает результаты, которые вы выгрузили сами — например, из
+экспорта «Страницы» в Google Search Console — вообще без обращений к поисковым API.
+Это самый безопасный и полностью соответствующий правилам способ.
 
 ```bash
 python -m seoaudit audit example.com \
@@ -78,31 +118,31 @@ python -m seoaudit audit example.com \
   --i-am-authorized
 ```
 
-Just preview the generated queries:
+Только посмотреть сгенерированные запросы:
 
 ```bash
-python -m seoaudit dorks example.com --keywords "running shoes" --seed-paths blog,shop
+python -m seoaudit dorks example.com --keywords "кроссовки" --seed-paths blog,shop
 ```
 
-Launch the web interface:
+Запустить веб-интерфейс:
 
 ```bash
-python -m seoaudit web           # then open http://127.0.0.1:8000
+python -m seoaudit web           # откройте http://127.0.0.1:8000
 ```
 
-Reports land in `--output` (default `seo-audit-output/`): `report.html`,
-`report.json`, plus `audit.log` and a `state.json` checkpoint.
+Отчёты появятся в `--output` (по умолчанию `seo-audit-output/`): `report.html`,
+`report.json`, а также `audit.log` и чекпоинт `state.json`.
 
 ---
 
-## Live search collection (optional)
+## Сбор результатов из живого поиска (опционально)
 
-Prefer an official API — it's reliable and Terms-of-Service-friendly:
+Предпочтителен официальный API — надёжно и без нарушения правил:
 
 **Google Programmable Search (Custom Search JSON API)**
 ```bash
-export SEOAUDIT_GOOGLE_API_KEY=...      # from Google Cloud
-export SEOAUDIT_GOOGLE_CSE_ID=...       # from programmablesearchengine.google.com
+export SEOAUDIT_GOOGLE_API_KEY=...      # из Google Cloud
+export SEOAUDIT_GOOGLE_CSE_ID=...       # из programmablesearchengine.google.com
 python -m seoaudit audit example.com --provider google_cse --i-am-authorized
 ```
 
@@ -112,87 +152,89 @@ export SEOAUDIT_SERPAPI_KEY=...
 python -m seoaudit audit example.com --provider serpapi --i-am-authorized
 ```
 
-Credentials are read from the environment and never written to logs or reports.
+Ключи читаются из окружения и никогда не пишутся в логи и отчёты.
 
 ---
 
-## Configuration file
+## Файл конфигурации
 
-Anything settable via flags can live in a JSON config (see
-`examples/config.example.json`). CLI flags override file values.
+Всё, что задаётся флагами, можно вынести в JSON-конфиг (см.
+`examples/config.example.json`). Флаги CLI переопределяют значения из файла.
 
 ```bash
 python -m seoaudit audit example.com --config examples/config.example.json --i-am-authorized
 ```
 
-Key options: `rate_limit_rps`, `concurrency`, `max_pages`, `max_dorks`,
+Ключевые параметры: `rate_limit_rps`, `concurrency`, `max_pages`, `max_dorks`,
 `respect_robots_txt`, `include_subdomains`, `duplicate_similarity`,
 `report_formats`, `contact_email`.
 
 ---
 
-## Interrupt & resume
+## Прерывание и возобновление
 
-State is checkpointed atomically after each stage and periodically during
-analysis. Press **Ctrl-C** to stop gracefully; re-run the same command to resume
-from where it left off (or add `--no-resume` to start fresh).
-
----
-
-## Reports
-
-- **`report.json`** — complete machine-readable output (dorks, results, per-page
-  analyses, clusters, recommendations, stats).
-- **`report.html`** — a self-contained, dark/light-aware dashboard: summary
-  tiles, prioritised recommendations, clusters, common issues, and an
-  expandable per-page breakdown.
-- **`report.pdf`** — written if `weasyprint` is installed (`--formats pdf`);
-  otherwise open the HTML report and "Print to PDF".
+Состояние атомарно сохраняется после каждого этапа и периодически во время
+анализа. Нажмите **Ctrl-C** для корректной остановки; повторный запуск той же
+команды продолжит с места остановки (или добавьте `--no-resume`, чтобы начать заново).
 
 ---
 
-## Architecture
+## Отчёты
+
+- **`report.json`** — полный машиночитаемый результат (дорки, результаты,
+  анализ страниц, кластеры, рекомендации, статистика).
+- **`report.html`** — автономная панель (со светлой/тёмной темой): плитки сводки,
+  приоритизированные рекомендации, кластеры, частые проблемы и раскрывающийся
+  разбор по каждой странице.
+- **`report.pdf`** — создаётся, если установлен `weasyprint` (`--formats pdf`);
+  иначе откройте HTML-отчёт и «Печать в PDF».
+
+---
+
+## Структура проекта
 
 ```
 seoaudit/
-├── cli.py            # argparse CLI (audit | dorks | web)
-├── pipeline.py       # orchestrates stages + resume + interruption
-├── config.py         # Config dataclass, polite defaults, secret redaction
-├── domain.py         # single-domain scoping (the safety core)
-├── dorks.py          # query generation
-├── collector.py      # run queries → scope-filter → dedupe
-├── analyzer.py       # fetch + parse + issue/leak/duplicate detection
-├── cluster.py        # clustering + recommendation engine
-├── http_client.py    # polite HTTP client (robots, UA rotation, retries)
-├── ratelimit.py      # token-bucket rate limiter
-├── state.py          # resumable checkpoint
-├── report/           # JSON + HTML (+ PDF) writers & template
-├── search/           # provider interface + google_cse / serpapi / manual
-└── web/              # Flask control panel
+├── cli.py            # CLI на argparse (audit | dorks | web)
+├── pipeline.py       # оркестрация этапов + возобновление + прерывание
+├── config.py         # Config, вежливые значения по умолчанию, скрытие секретов
+├── domain.py         # ограничение одним доменом (ядро безопасности)
+├── dorks.py          # генерация запросов
+├── collector.py      # прогон запросов → фильтр по домену → дедупликация
+├── analyzer.py       # загрузка + разбор + поиск проблем/утечек/дубликатов
+├── insights.py       # объединённый этап: кластеры + дубликаты + рекомендации
+├── cluster.py        # кластеризация и движок рекомендаций
+├── http_client.py    # вежливый HTTP-клиент (robots, ротация UA, повторы)
+├── ratelimit.py      # ограничитель частоты (token bucket)
+├── state.py          # возобновляемый чекпоинт
+├── report/           # писатели JSON + HTML (+ PDF) и шаблон
+├── search/           # интерфейс провайдеров + google_cse / serpapi / manual
+└── web/              # панель управления на Flask
 ```
 
 ---
 
-## Development
+## Разработка
 
 ```bash
 pip install pytest
 python -m pytest -q
 ```
 
-The suite runs fully offline (no network, no API keys), covering domain scoping,
-dork generation, collection/dedupe, page analysis (via a fake HTTP client),
-duplicate detection, clustering, recommendations, and an end-to-end pipeline run.
+Набор тестов работает полностью офлайн (без сети и API-ключей) и покрывает
+ограничение по домену, генерацию дорков, сбор/дедупликацию, анализ страниц
+(через фейковый HTTP-клиент), поиск дубликатов, кластеризацию, рекомендации и
+сквозной прогон конвейера.
 
 ---
 
-## Responsible-use note
+## Ответственное использование
 
-This tool is for auditing your own web properties or clients' properties with
-explicit permission. It deliberately cannot target multiple domains, honours
-`robots.txt`, and rate-limits itself. Do not use it against sites you are not
-authorised to test.
+Инструмент предназначен для аудита собственных веб-ресурсов или ресурсов клиентов
+с явного разрешения. Он намеренно не умеет работать с несколькими доменами,
+соблюдает `robots.txt` и сам ограничивает частоту запросов. Не используйте его
+против сайтов, на аудит которых у вас нет полномочий.
 
-## License
+## Лицензия
 
-Apache-2.0 (consistent with the surrounding repository).
+Apache-2.0 (в соответствии с окружающим репозиторием).

@@ -64,4 +64,4 @@ def test_html_report_contains_domain(tmp_path):
     AuditPipeline(cfg).run(resume=False)
     html = open(os.path.join(cfg.output_dir, "report.html"), encoding="utf-8").read()
     assert "example.com" in html
-    assert "SEO Visibility Audit" in html
+    assert "Аудит видимости в поиске" in html

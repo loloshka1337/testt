@@ -19,18 +19,18 @@ from .models import Action, Cluster, PageAnalysis, Recommendation, Severity
 
 # Ordered rules: first match wins. Each is (page_type, label, url-regex).
 _TYPE_RULES = [
-    ("home", "Home / root", re.compile(r"^/?$")),
-    ("admin", "Admin / back-office", re.compile(r"/(wp-admin|admin|administrator|backend|dashboard)(/|$)")),
-    ("auth", "Login / account", re.compile(r"/(login|signin|sign-in|account|profile|register|signup)(/|$)")),
-    ("cart", "Cart / checkout", re.compile(r"/(cart|basket|checkout|order|payment)(/|$)")),
-    ("api", "API endpoints", re.compile(r"/(api|graphql|rest|v\d+)(/|$)")),
-    ("search", "Internal search results", re.compile(r"/(search|find)(/|$)|[?&](q|s|query|search)=")),
-    ("blog", "Blog / articles", re.compile(r"/(blog|news|article|articles|post|posts|story|stories)(/|$)")),
-    ("product", "Products", re.compile(r"/(product|products|item|shop|store|p)(/|$)")),
-    ("category", "Categories / listings", re.compile(r"/(category|categories|collection|collections|tag|tags|topic)(/|$)")),
-    ("author", "Author / user pages", re.compile(r"/(author|user|member|team)(/|$)")),
-    ("media", "Media / documents", re.compile(r"\.(pdf|docx?|xlsx?|pptx?|csv|zip|jpg|jpeg|png|gif|svg|mp4)$")),
-    ("feed", "Feeds / sitemaps", re.compile(r"/(feed|rss|atom|sitemap[^/]*\.xml|sitemap)(/|$)|\.rss$")),
+    ("home", "Главная / корень", re.compile(r"^/?$")),
+    ("admin", "Админка / бэк-офис", re.compile(r"/(wp-admin|admin|administrator|backend|dashboard)(/|$)")),
+    ("auth", "Вход / личный кабинет", re.compile(r"/(login|signin|sign-in|account|profile|register|signup)(/|$)")),
+    ("cart", "Корзина / оформление", re.compile(r"/(cart|basket|checkout|order|payment)(/|$)")),
+    ("api", "API-эндпоинты", re.compile(r"/(api|graphql|rest|v\d+)(/|$)")),
+    ("search", "Внутренний поиск", re.compile(r"/(search|find)(/|$)|[?&](q|s|query|search)=")),
+    ("blog", "Блог / статьи", re.compile(r"/(blog|news|article|articles|post|posts|story|stories)(/|$)")),
+    ("product", "Товары", re.compile(r"/(product|products|item|shop|store|p)(/|$)")),
+    ("category", "Категории / листинги", re.compile(r"/(category|categories|collection|collections|tag|tags|topic)(/|$)")),
+    ("author", "Авторы / пользователи", re.compile(r"/(author|user|member|team)(/|$)")),
+    ("media", "Медиа / документы", re.compile(r"\.(pdf|docx?|xlsx?|pptx?|csv|zip|jpg|jpeg|png|gif|svg|mp4)$")),
+    ("feed", "Фиды / карты сайта", re.compile(r"/(feed|rss|atom|sitemap[^/]*\.xml|sitemap)(/|$)|\.rss$")),
 ]
 
 _PARAM_RE = re.compile(r"[?&]")
@@ -43,7 +43,7 @@ class Clusterer:
             slug = sp.strip("/ ")
             if slug:
                 self.seed_rules.append(
-                    (f"seed:{slug}", f"Section: /{slug}", re.compile(rf"/{re.escape(slug)}(/|$)"))
+                    (f"seed:{slug}", f"Раздел: /{slug}", re.compile(rf"/{re.escape(slug)}(/|$)"))
                 )
 
     def _classify(self, url: str) -> tuple:
@@ -55,8 +55,8 @@ class Clusterer:
             if rx.search(path) or rx.search(url):
                 return page_type, label
         if _PARAM_RE.search(url):
-            return "parameterised", "Parameterised URLs"
-        return "content", "General content pages"
+            return "parameterised", "URL с параметрами"
+        return "content", "Прочие контентные страницы"
 
     def cluster(self, analyses: List[PageAnalysis]) -> List[Cluster]:
         buckets: Dict[str, Cluster] = {}
@@ -109,13 +109,13 @@ class RecommendationEngine:
                 scope="cluster",
                 action=Action.IMPROVE,
                 severity=Severity.MEDIUM,
-                title=f"Consolidate {len(group)} near-duplicate pages",
-                detail=("These pages share near-identical content and compete with each other. "
-                        "Pick a canonical version and add rel=canonical / redirect the rest:\n  - "
+                title=f"Объединить {len(group)} почти дублирующихся страниц",
+                detail=("Эти страницы содержат почти идентичный контент и конкурируют между собой. "
+                        "Выберите каноническую версию и добавьте rel=canonical / редирект для остальных:\n  - "
                         + "\n  - ".join(group)),
             ))
 
-        # Cluster-level thin-content pattern.
+        # Паттерн тонкого контента на уровне кластера.
         for c in clusters:
             thin = [u for u in c.urls
                     if by_url.get(u) and any(i.code == "thin_content" for i in by_url[u].issues)]
@@ -125,9 +125,9 @@ class RecommendationEngine:
                     scope="cluster",
                     action=Action.IMPROVE,
                     severity=Severity.MEDIUM,
-                    title=f"{len(thin)} thin pages in '{c.name}'",
-                    detail=("Multiple pages in this section have very little text and may be "
-                            "seen as low-quality. Expand them or consolidate/noindex."),
+                    title=f"{len(thin)} тонких страниц в разделе «{c.name}»",
+                    detail=("В этом разделе много страниц с очень малым объёмом текста — их могут счесть "
+                            "низкокачественными. Расширьте контент либо объедините/закройте в noindex."),
                 ))
 
         # Sort: highest severity first, then de-index/index actions to the top.
@@ -147,53 +147,53 @@ class RecommendationEngine:
             recs.append(Recommendation(
                 target=a.url, scope="page", action=Action.DEINDEX,
                 severity=worst.severity,
-                title="Sensitive information exposed",
-                detail=("This page appears to leak sensitive data ("
+                title="Раскрыта чувствительная информация",
+                detail=("Похоже, страница раскрывает чувствительные данные ("
                         + ", ".join(sorted({i.code for i in a.leaks}))
-                        + "). Remove the content, secure the resource, and request removal "
-                          "from the index."),
+                        + "). Уберите контент, защитите ресурс и запросите удаление "
+                          "из индекса."),
             ))
-            return recs  # a leaking page should be removed — that's the priority action
+            return recs  # утекающую страницу нужно убрать — это приоритетное действие
 
-        # 2. Broken but indexed.
+        # 2. Нерабочая, но проиндексированная.
         if a.status_code and a.status_code >= 400:
             recs.append(Recommendation(
                 target=a.url, scope="page", action=Action.DEINDEX,
                 severity=Severity.HIGH,
-                title=f"Indexed page returns {a.status_code}",
-                detail="A broken page is discoverable in search. Fix it or return 410/redirect it.",
+                title=f"Проиндексированная страница возвращает {a.status_code}",
+                detail="Нерабочая страница доступна в поиске. Почините её либо верните 410 / редирект.",
             ))
             return recs
 
-        # 3. Page types that shouldn't be indexed but are indexable.
+        # 3. Типы страниц, которые не должны индексироваться, но индексируемы.
         if page_type in _SHOULD_NOT_INDEX and a.indexable:
             recs.append(Recommendation(
                 target=a.url, scope="page", action=Action.DEINDEX,
                 severity=Severity.MEDIUM,
-                title=f"'{page_type}' page is indexable",
-                detail=("Utility pages like this rarely belong in the index. Add noindex or "
-                        "block via robots.txt to protect crawl budget and avoid low-value listings."),
+                title=f"Служебная страница типа «{page_type}» индексируема",
+                detail=("Такие служебные страницы редко нужны в индексе. Добавьте noindex или "
+                        "закройте в robots.txt, чтобы сберечь краулинговый бюджет и не плодить малоценные результаты."),
             ))
 
-        # 4. Valuable page blocked from indexing.
+        # 4. Ценная страница, закрытая от индексации.
         if not a.indexable and page_type not in _SHOULD_NOT_INDEX:
             reason = []
             if not a.robots_index:
-                reason.append("noindex directive")
+                reason.append("директива noindex")
             if a.robots_txt_allowed is False:
-                reason.append("robots.txt disallow")
+                reason.append("запрет в robots.txt")
             if a.canonical_is_self is False:
-                reason.append("canonical points elsewhere")
+                reason.append("canonical ведёт на другую страницу")
             recs.append(Recommendation(
                 target=a.url, scope="page", action=Action.INDEX,
                 severity=Severity.HIGH,
-                title="Content page is blocked from indexing",
-                detail=("This looks like a page you'd want found, but it's currently not indexable ("
-                        + ", ".join(reason or ["unknown"]) + "). Remove the blocker if it should rank."),
+                title="Контентная страница закрыта от индексации",
+                detail=("Похоже, эту страницу стоило бы находить в поиске, но сейчас она не индексируема ("
+                        + ", ".join(reason or ["причина неизвестна"]) + "). Уберите блокировку, если она должна ранжироваться."),
             ))
             return recs
 
-        # 5. Fixable on-page issues.
+        # 5. Исправимые on-page проблемы.
         fixable = [i for i in a.issues
                    if i.code in {"missing_title", "missing_meta_description", "thin_content",
                                  "long_title", "redirect_chain", "no_https", "multiple_h1",
@@ -203,18 +203,18 @@ class RecommendationEngine:
             recs.append(Recommendation(
                 target=a.url, scope="page", action=Action.IMPROVE,
                 severity=worst.severity,
-                title=f"{len(fixable)} on-page issue(s) to fix",
+                title=f"On-page проблем к исправлению: {len(fixable)}",
                 detail="; ".join(f"{i.code}: {i.message}" for i in fixable),
             ))
             return recs
 
-        # 6. Healthy & valuable -> promote or keep.
+        # 6. Здоровая и ценная -> продвигать или оставить.
         if a.indexable and a.word_count >= 300 and page_type in {"blog", "product", "content", "category"}:
             recs.append(Recommendation(
                 target=a.url, scope="page", action=Action.PROMOTE,
                 severity=Severity.INFO,
-                title="Healthy page — candidate for promotion",
-                detail=("Technically sound and content-rich. Consider internal links, refreshed "
-                        "content, or backlinks to grow its visibility."),
+                title="Здоровая страница — кандидат на продвижение",
+                detail=("Технически корректна и наполнена контентом. Рассмотрите внутренние ссылки, "
+                        "обновление контента или внешние ссылки для роста видимости."),
             ))
         return recs

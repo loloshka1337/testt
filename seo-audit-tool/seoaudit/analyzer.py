@@ -33,21 +33,21 @@ _WORD_RE = re.compile(r"\w+", re.UNICODE)
 # conservative to keep false positives low; every hit is reported as something
 # for the *owner* to review, never acted upon.
 _LEAK_PATTERNS: List[Tuple[str, str, Severity, re.Pattern]] = [
-    ("private_ip", "Internal/private IP address exposed in page",
+    ("private_ip", "На странице раскрыт внутренний/приватный IP-адрес",
      Severity.MEDIUM, re.compile(r"\b(?:10|127|192\.168|172\.(?:1[6-9]|2\d|3[01]))\.\d{1,3}\.\d{1,3}\b")),
-    ("aws_key", "Possible AWS access key ID",
+    ("aws_key", "Возможный идентификатор ключа доступа AWS",
      Severity.CRITICAL, re.compile(r"\bAKIA[0-9A-Z]{16}\b")),
-    ("private_key", "Private key block",
+    ("private_key", "Блок приватного ключа",
      Severity.CRITICAL, re.compile(r"-----BEGIN (?:RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----")),
-    ("password_assignment", "Hard-coded password/secret assignment",
+    ("password_assignment", "Захардкоженный пароль/секрет в коде",
      Severity.HIGH, re.compile(r"(?i)\b(?:password|passwd|secret|api[_-]?key|token)\s*[=:]\s*['\"][^'\"]{4,}")),
-    ("stack_trace", "Server stack trace / debug output",
+    ("stack_trace", "Трассировка стека / отладочный вывод сервера",
      Severity.HIGH, re.compile(r"(?i)(?:traceback \(most recent call last\)|stack trace:|fatal error:|exception in thread)")),
-    ("sql_error", "Database error message leaking internals",
+    ("sql_error", "Сообщение об ошибке БД, раскрывающее внутренности",
      Severity.MEDIUM, re.compile(r"(?i)(?:sql syntax|mysql_fetch|ORA-\d{5}|psql:|SQLSTATE\[)")),
-    ("directory_listing", "Open directory listing",
+    ("directory_listing", "Открытый листинг каталога",
      Severity.MEDIUM, re.compile(r"(?i)index of /")),
-    ("env_dump", "Environment/config dump",
+    ("env_dump", "Дамп окружения/конфигурации",
      Severity.HIGH, re.compile(r"(?i)(?:DB_PASSWORD|DB_USERNAME|SECRET_KEY|AWS_SECRET_ACCESS_KEY)\s*=")),
 ]
 
@@ -101,7 +101,7 @@ class PageAnalyzer:
     def analyze_one(self, url: str) -> PageAnalysis:
         pa = PageAnalysis(url=url)
         if not self.scope.url_in_scope(url):
-            pa.error = "URL is not in scope for the target domain"
+            pa.error = "URL вне области целевого домена"
             pa.issues.append(Issue("off_scope", pa.error, Severity.CRITICAL))
             return pa
 
@@ -110,7 +110,7 @@ class PageAnalyzer:
         if allowed is False:
             pa.issues.append(Issue(
                 "robots_txt_disallow",
-                "URL is disallowed by robots.txt, so it will not be respected/crawled.",
+                "URL запрещён в robots.txt — он не будет обойдён/учтён поисковиком.",
                 Severity.HIGH,
             ))
             # Still record the state, but don't fetch a disallowed URL.
@@ -126,7 +126,7 @@ class PageAnalyzer:
 
         if res.error:
             pa.error = res.error
-            pa.issues.append(Issue("fetch_error", f"Could not fetch page: {res.error}", Severity.HIGH))
+            pa.issues.append(Issue("fetch_error", f"Не удалось загрузить страницу: {res.error}", Severity.HIGH))
             return pa
 
         self._analyze_http(pa, res)
@@ -137,25 +137,25 @@ class PageAnalyzer:
     def _analyze_http(self, pa: PageAnalysis, res) -> None:
         code = res.status_code
         if code >= 500:
-            pa.issues.append(Issue("http_5xx", f"Server error {code}.", Severity.CRITICAL))
+            pa.issues.append(Issue("http_5xx", f"Ошибка сервера {code}.", Severity.CRITICAL))
         elif code >= 400:
-            pa.issues.append(Issue("http_4xx", f"Client error {code} — page indexed but broken.", Severity.HIGH))
+            pa.issues.append(Issue("http_4xx", f"Ошибка клиента {code} — страница проиндексирована, но нерабочая.", Severity.HIGH))
         elif 300 <= code < 400 or len(res.redirect_chain) > 1:
             if len(res.redirect_chain) > 2:
                 pa.issues.append(Issue(
                     "redirect_chain",
-                    f"Redirect chain of {len(res.redirect_chain) - 1} hops wastes crawl budget.",
+                    f"Цепочка из {len(res.redirect_chain) - 1} редиректов расходует краулинговый бюджет.",
                     Severity.MEDIUM,
                 ))
-        # Downgrade http->https check
+        # Проверка использования обычного HTTP вместо HTTPS
         if res.final_url.startswith("http://"):
-            pa.issues.append(Issue("no_https", "Final URL is served over plain HTTP.", Severity.MEDIUM))
+            pa.issues.append(Issue("no_https", "Итоговый URL отдаётся по обычному HTTP.", Severity.MEDIUM))
 
-        # X-Robots-Tag header directives
+        # Директивы заголовка X-Robots-Tag
         xrt = (pa.x_robots_tag or "").lower()
         if "noindex" in xrt:
             pa.robots_index = False
-            pa.issues.append(Issue("xrobots_noindex", "X-Robots-Tag header sets noindex.", Severity.HIGH))
+            pa.issues.append(Issue("xrobots_noindex", "Заголовок X-Robots-Tag задаёт noindex.", Severity.HIGH))
         if "nofollow" in xrt:
             pa.robots_follow = False
 
@@ -166,20 +166,20 @@ class PageAnalyzer:
         if soup.title and soup.title.string:
             pa.title = soup.title.string.strip()
         if not pa.title:
-            pa.issues.append(Issue("missing_title", "Page has no <title>.", Severity.HIGH))
+            pa.issues.append(Issue("missing_title", "У страницы нет <title>.", Severity.HIGH))
         elif len(pa.title) > 65:
-            pa.issues.append(Issue("long_title", f"Title is {len(pa.title)} chars (may be truncated in SERPs).", Severity.LOW))
+            pa.issues.append(Issue("long_title", f"Заголовок длиной {len(pa.title)} символов (может обрезаться в выдаче).", Severity.LOW))
         elif len(pa.title) < 15:
-            pa.issues.append(Issue("short_title", "Title is very short.", Severity.LOW))
+            pa.issues.append(Issue("short_title", "Заголовок очень короткий.", Severity.LOW))
 
         # Meta description
         md = soup.find("meta", attrs={"name": re.compile("^description$", re.I)})
         if md and md.get("content"):
             pa.meta_description = md["content"].strip()
         if not pa.meta_description:
-            pa.issues.append(Issue("missing_meta_description", "No meta description.", Severity.MEDIUM))
+            pa.issues.append(Issue("missing_meta_description", "Нет meta description.", Severity.MEDIUM))
         elif len(pa.meta_description) > 165:
-            pa.issues.append(Issue("long_meta_description", "Meta description likely truncated in SERPs.", Severity.LOW))
+            pa.issues.append(Issue("long_meta_description", "Meta description, вероятно, обрежется в выдаче.", Severity.LOW))
 
         # Meta robots
         mr = soup.find("meta", attrs={"name": re.compile("^robots$", re.I)})
@@ -187,10 +187,10 @@ class PageAnalyzer:
             content = mr["content"].lower()
             if "noindex" in content:
                 pa.robots_index = False
-                pa.issues.append(Issue("meta_noindex", "Page has meta robots noindex.", Severity.HIGH))
+                pa.issues.append(Issue("meta_noindex", "У страницы meta robots noindex.", Severity.HIGH))
             if "nofollow" in content:
                 pa.robots_follow = False
-                pa.issues.append(Issue("meta_nofollow", "Page has meta robots nofollow.", Severity.LOW))
+                pa.issues.append(Issue("meta_nofollow", "У страницы meta robots nofollow.", Severity.LOW))
 
         # Canonical
         link_canon = soup.find("link", attrs={"rel": re.compile("canonical", re.I)})
@@ -203,24 +203,24 @@ class PageAnalyzer:
             if pa.canonical_is_self is False:
                 pa.issues.append(Issue(
                     "canonical_elsewhere",
-                    f"Canonical points to a different URL ({canon}); this page defers indexing to it.",
+                    f"Canonical указывает на другой URL ({canon}); эта страница передаёт ему индексацию.",
                     Severity.MEDIUM,
                 ))
             if can_key and not self.scope.url_in_scope(canon):
                 pa.issues.append(Issue(
                     "canonical_offsite",
-                    f"Canonical points off the target domain: {canon}.",
+                    f"Canonical указывает за пределы целевого домена: {canon}.",
                     Severity.HIGH,
                 ))
         else:
-            pa.issues.append(Issue("missing_canonical", "No canonical link element.", Severity.LOW))
+            pa.issues.append(Issue("missing_canonical", "Нет элемента canonical.", Severity.LOW))
 
-        # H1s
+        # H1
         h1s = soup.find_all("h1")
         if len(h1s) == 0:
-            pa.issues.append(Issue("missing_h1", "No <h1> heading.", Severity.LOW))
+            pa.issues.append(Issue("missing_h1", "Нет заголовка <h1>.", Severity.LOW))
         elif len(h1s) > 1:
-            pa.issues.append(Issue("multiple_h1", f"{len(h1s)} <h1> headings (should usually be one).", Severity.LOW))
+            pa.issues.append(Issue("multiple_h1", f"{len(h1s)} заголовков <h1> (обычно должен быть один).", Severity.LOW))
 
         # Visible text -> word count, fingerprint, thin-content check
         for tag in soup(["script", "style", "noscript"]):
@@ -231,7 +231,7 @@ class PageAnalyzer:
         pa.content_hash = hashlib.sha256(text.encode("utf-8", "ignore")).hexdigest()
         pa.shingles = _shingles(text)
         if pa.word_count < 120:
-            pa.issues.append(Issue("thin_content", f"Only {pa.word_count} words of text (thin content).", Severity.MEDIUM))
+            pa.issues.append(Issue("thin_content", f"Всего {pa.word_count} слов текста (тонкий контент).", Severity.MEDIUM))
 
         self._scan_leaks(pa, html)
 

@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en">
+<html lang="ru">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SEO Audit — {{ report.domain }}</title>
+<title>SEO-аудит — {{ report.domain }}</title>
 <style>
   :root {
     --bg: #0f1115; --card: #181b22; --fg: #e7e9ee; --muted: #9aa3b2;
@@ -47,43 +47,43 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>SEO Visibility Audit</h1>
+  <h1>Аудит видимости в поиске</h1>
   <p class="sub">
-    Domain <strong>{{ report.domain }}</strong> ·
-    generated {{ report.generated_at }} ·
-    tool v{{ report.tool_version }}
+    Домен <strong>{{ report.domain }}</strong> ·
+    сформировано {{ report.generated_at }} ·
+    версия v{{ report.tool_version }}
   </p>
 
   <div class="note">
-    This report covers only <strong>{{ report.domain }}</strong>. It is intended for the domain
-    owner or an authorised auditor. Findings are advisory — verify before acting.
+    Этот отчёт охватывает только <strong>{{ report.domain }}</strong>. Он предназначен для владельца
+    домена или авторизованного аудитора. Выводы носят рекомендательный характер — проверяйте перед действиями.
   </div>
 
-  <h2>Summary</h2>
+  <h2>Сводка</h2>
   <div class="grid">
-    <div class="card"><div class="label">Dorks run</div><div class="stat">{{ report.dorks|length }}</div></div>
-    <div class="card"><div class="label">URLs discovered</div><div class="stat">{{ report.results|length }}</div></div>
-    <div class="card"><div class="label">Pages analysed</div><div class="stat">{{ total_pages }}</div></div>
-    <div class="card"><div class="label">Indexable</div><div class="stat">{{ indexable }}</div></div>
-    <div class="card"><div class="label">Not indexable</div><div class="stat">{{ not_indexable }}</div></div>
-    <div class="card"><div class="label">With issues</div><div class="stat">{{ with_issues }}</div></div>
-    <div class="card"><div class="label">Possible leaks</div><div class="stat" style="color:var(--critical)">{{ with_leaks }}</div></div>
-    <div class="card"><div class="label">Recommendations</div><div class="stat">{{ report.recommendations|length }}</div></div>
+    <div class="card"><div class="label">Запросов выполнено</div><div class="stat">{{ report.dorks|length }}</div></div>
+    <div class="card"><div class="label">Найдено URL</div><div class="stat">{{ report.results|length }}</div></div>
+    <div class="card"><div class="label">Проанализировано страниц</div><div class="stat">{{ total_pages }}</div></div>
+    <div class="card"><div class="label">Индексируемых</div><div class="stat">{{ indexable }}</div></div>
+    <div class="card"><div class="label">Неиндексируемых</div><div class="stat">{{ not_indexable }}</div></div>
+    <div class="card"><div class="label">С проблемами</div><div class="stat">{{ with_issues }}</div></div>
+    <div class="card"><div class="label">Возможные утечки</div><div class="stat" style="color:var(--critical)">{{ with_leaks }}</div></div>
+    <div class="card"><div class="label">Рекомендаций</div><div class="stat">{{ report.recommendations|length }}</div></div>
   </div>
 
-  <h2>Recommendations by action</h2>
+  <h2>Рекомендации по действиям</h2>
   <div class="grid">
     {% for action, n in action_counter.most_common() %}
     <div class="card"><div class="label">{{ action }}</div><div class="stat small">{{ n }}</div></div>
     {% else %}
-    <p class="muted">No recommendations generated.</p>
+    <p class="muted">Рекомендаций не сформировано.</p>
     {% endfor %}
   </div>
 
   {% if report.recommendations %}
-  <h2>Prioritised recommendations</h2>
+  <h2>Приоритизированные рекомендации</h2>
   <table>
-    <thead><tr><th>Sev</th><th>Action</th><th>Target</th><th>Recommendation</th></tr></thead>
+    <thead><tr><th>Важн.</th><th>Действие</th><th>Объект</th><th>Рекомендация</th></tr></thead>
     <tbody>
     {% for r in report.recommendations %}
       <tr>
@@ -99,9 +99,9 @@
   </table>
   {% endif %}
 
-  <h2>Page clusters</h2>
+  <h2>Кластеры страниц</h2>
   <table>
-    <thead><tr><th>Cluster</th><th>Type</th><th>Pages</th></tr></thead>
+    <thead><tr><th>Кластер</th><th>Тип</th><th>Страниц</th></tr></thead>
     <tbody>
     {% for c in report.clusters %}
       <tr><td>{{ c.name }}</td><td><code>{{ c.page_type }}</code></td><td>{{ c.urls|length }}</td></tr>
@@ -110,9 +110,9 @@
   </table>
 
   {% if top_issues %}
-  <h2>Most common issues</h2>
+  <h2>Самые частые проблемы</h2>
   <table>
-    <thead><tr><th>Issue code</th><th>Count</th></tr></thead>
+    <thead><tr><th>Код проблемы</th><th>Кол-во</th></tr></thead>
     <tbody>
     {% for code, n in top_issues %}
       <tr><td><code>{{ code }}</code></td><td>{{ n }}</td></tr>
@@ -121,32 +121,32 @@
   </table>
   {% endif %}
 
-  <h2>Pages ({{ total_pages }})</h2>
+  <h2>Страницы ({{ total_pages }})</h2>
   {% for a in report.analyses %}
   <details>
     <summary>
-      {% if not a.indexable %}<span class="badge b-high">blocked</span>{% endif %}
-      {% if a.leaks %}<span class="badge b-critical">leak</span>{% endif %}
+      {% if not a.indexable %}<span class="badge b-high">закрыта</span>{% endif %}
+      {% if a.leaks %}<span class="badge b-critical">утечка</span>{% endif %}
       <span class="url">{{ a.url }}</span>
-      <span class="muted">— {{ a.status_code or '—' }} · {{ a.word_count }} words</span>
+      <span class="muted">— {{ a.status_code or '—' }} · {{ a.word_count }} слов</span>
     </summary>
     <div style="padding:8px 0">
-      <span class="pill">status {{ a.status_code or 'n/a' }}</span>
-      <span class="pill">indexable: {{ 'yes' if a.indexable else 'no' }}</span>
+      <span class="pill">статус {{ a.status_code or 'н/д' }}</span>
+      <span class="pill">индексируема: {{ 'да' if a.indexable else 'нет' }}</span>
       <span class="pill">robots index: {{ a.robots_index }}</span>
-      {% if a.canonical %}<span class="pill">canonical: {{ 'self' if a.canonical_is_self else a.canonical }}</span>{% endif %}
-      {% if a.redirect_chain|length > 1 %}<span class="pill">{{ a.redirect_chain|length - 1 }} redirect(s)</span>{% endif %}
+      {% if a.canonical %}<span class="pill">canonical: {{ 'сама на себя' if a.canonical_is_self else a.canonical }}</span>{% endif %}
+      {% if a.redirect_chain|length > 1 %}<span class="pill">редиректов: {{ a.redirect_chain|length - 1 }}</span>{% endif %}
       {% if a.title %}<div style="margin-top:6px"><strong>{{ a.title }}</strong></div>{% endif %}
       {% if a.meta_description %}<div class="muted" style="font-size:.85rem">{{ a.meta_description }}</div>{% endif %}
       {% if a.issues %}
-        <div style="margin-top:8px" class="label">Issues</div>
+        <div style="margin-top:8px" class="label">Проблемы</div>
         {% for i in a.issues %}
           <div><span class="badge b-{{ i.severity.value }}">{{ i.severity.value }}</span>
             <code>{{ i.code }}</code> — {{ i.message }}</div>
         {% endfor %}
       {% endif %}
       {% if a.leaks %}
-        <div style="margin-top:8px" class="label" style="color:var(--critical)">Possible leaks</div>
+        <div style="margin-top:8px" class="label" style="color:var(--critical)">Возможные утечки</div>
         {% for i in a.leaks %}
           <div><span class="badge b-{{ i.severity.value }}">{{ i.severity.value }}</span>
             <code>{{ i.code }}</code> — {{ i.message }}</div>
@@ -156,9 +156,9 @@
   </details>
   {% endfor %}
 
-  <h2>Search queries used</h2>
+  <h2>Использованные поисковые запросы</h2>
   <table>
-    <thead><tr><th>Category</th><th>Query</th><th>Why</th></tr></thead>
+    <thead><tr><th>Категория</th><th>Запрос</th><th>Зачем</th></tr></thead>
     <tbody>
     {% for d in report.dorks %}
       <tr><td><code>{{ d.category }}</code></td><td class="url">{{ d.query }}</td><td class="muted">{{ d.rationale }}</td></tr>
@@ -167,7 +167,7 @@
   </table>
 
   <p class="sub" style="margin-top:40px">
-    Generated by seoaudit — a white-hat, single-domain SEO visibility auditor.
+    Сформировано seoaudit — «белым» аудитором видимости в поиске для одного домена.
   </p>
 </div>
 </body>

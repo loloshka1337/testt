@@ -58,7 +58,7 @@ def _run_job(job: Job, cfg: Config) -> None:
         job.stats = report.stats
         job.report_path = os.path.join(cfg.output_dir, "report.html")
         job.status = "done"
-        job.message = "Audit complete."
+        job.message = "Аудит завершён."
     except Exception as exc:  # surface any failure to the UI
         log.error("Job %s failed: %s\n%s", job.id, exc, traceback.format_exc())
         job.status = "error"
@@ -78,11 +78,11 @@ def create_app(base_output: str = "seo-audit-output") -> Flask:
         form = request.form
         domain = (form.get("domain") or "").strip()
         if not domain:
-            return render_template("index.html", error="A domain is required."), 400
+            return render_template("index.html", error="Укажите домен."), 400
         if not form.get("authorized"):
             return render_template(
                 "index.html",
-                error="You must confirm you are authorised to audit this domain.",
+                error="Подтвердите, что имеете право аудировать этот домен.",
             ), 400
 
         output_dir = os.path.join(base_output, domain.replace("/", "_"))

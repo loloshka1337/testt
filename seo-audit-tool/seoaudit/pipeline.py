@@ -11,9 +11,9 @@ import signal
 from typing import List, Optional
 
 from . import __version__
-from .analyzer import PageAnalyzer, find_duplicate_groups
-from .cluster import Clusterer, RecommendationEngine
+from .analyzer import PageAnalyzer
 from .collector import Collector
+from .insights import build_insights
 from .config import Config
 from .domain import DomainScope
 from .dorks import DorkGenerator
@@ -137,14 +137,15 @@ class AuditPipeline:
             log.info("Page analysis skipped (analyze_pages=%s, interrupted=%s).",
                      cfg.analyze_pages, self._interrupted)
 
-        # 4. Clustering ------------------------------------------------------
-        clusterer = Clusterer(seed_paths=cfg.seed_paths)
-        clusters = clusterer.cluster(analyses)
-
-        # 5. Duplicates + recommendations -----------------------------------
-        dup_groups = find_duplicate_groups(analyses, threshold=cfg.duplicate_similarity)
-        engine = RecommendationEngine(duplicate_groups=dup_groups)
-        recommendations = engine.generate(analyses, clusters)
+        # 4. Insights (кластеры + дубликаты + рекомендации) -----------------
+        insights = build_insights(
+            analyses,
+            seed_paths=cfg.seed_paths,
+            duplicate_similarity=cfg.duplicate_similarity,
+        )
+        clusters = insights.clusters
+        dup_groups = insights.duplicate_groups
+        recommendations = insights.recommendations
 
         # 6. Assemble report -------------------------------------------------
         report = AuditReport(

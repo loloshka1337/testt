@@ -1,9 +1,9 @@
 # seoaudit
 
-A white-hat, **single-domain** SEO audit & search-visibility monitoring tool.
+«Белый» инструмент SEO-аудита и мониторинга видимости в поиске для **одного домена**.
 
-The full project lives in [`seo-audit-tool/`](seo-audit-tool/) — see its
-[README](seo-audit-tool/README.md) for features, installation and usage.
+Полный проект находится в каталоге [`seo-audit-tool/`](seo-audit-tool/) — см. его
+[README](seo-audit-tool/README.md) с описанием возможностей, установки и использования.
 
 ```bash
 cd seo-audit-tool
@@ -13,6 +13,6 @@ python -m seoaudit audit example.com \
   --i-am-authorized
 ```
 
-## License
+## Лицензия
 
-Apache-2.0 — see [LICENSE](LICENSE).
+Apache-2.0 — см. [LICENSE](LICENSE).

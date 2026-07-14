@@ -76,14 +76,14 @@ class DorkGenerator:
     def _coverage(self) -> List[Dork]:
         s = self._site()
         out = [
-            Dork(s, "coverage", "Baseline: everything the engine has indexed for the site."),
+            Dork(s, "coverage", "Базовый охват: всё, что поисковик проиндексировал по сайту."),
             Dork(f"{s} -inurl:https", "coverage",
-                 "Surface any pages still indexed over plain HTTP."),
-            Dork(f"{s} inurl:https", "coverage", "HTTPS-only indexed pages."),
+                 "Найти страницы, всё ещё индексируемые по обычному HTTP."),
+            Dork(f"{s} inurl:https", "coverage", "Проиндексированные страницы только по HTTPS."),
         ]
         if self.scope.include_subdomains:
             out.append(Dork(f"{s} -inurl:www", "coverage",
-                            "Indexed pages served from non-www / sub-domains."))
+                            "Проиндексированные страницы на поддоменах / не-www."))
         return out
 
     def _page_types(self) -> List[Dork]:
@@ -92,10 +92,10 @@ class DorkGenerator:
         hints = list(dict.fromkeys(self.seed_paths + _TYPE_HINTS))
         for hint in hints:
             out.append(Dork(f"{s} inurl:{hint}", "page_types",
-                            f"Enumerate indexed '{hint}' pages."))
+                            f"Перечислить проиндексированные страницы раздела «{hint}»."))
         for ext in _DOC_EXTS:
             out.append(Dork(f"{s} filetype:{ext}", "page_types",
-                            f"Indexed {ext.upper()} documents."))
+                            f"Проиндексированные документы {ext.upper()}."))
         return out
 
     def _content(self) -> List[Dork]:
@@ -104,21 +104,21 @@ class DorkGenerator:
         for kw in self.keywords:
             phrase = f'"{kw}"' if " " in kw else kw
             out.append(Dork(f"{s} intitle:{phrase}", "content",
-                            f"Pages whose title targets '{kw}'."))
+                            f"Страницы, чей заголовок нацелен на «{kw}»."))
             out.append(Dork(f"{s} intext:{phrase} -intitle:{phrase}", "content",
-                            f"Pages mentioning '{kw}' in body but not title (optimisation gap)."))
-        # Generic thin/placeholder content probes.
+                            f"Страницы с «{kw}» в тексте, но не в заголовке (упущение оптимизации)."))
+        # Проверки на «тонкий» / заглушечный контент.
         for probe in ['intitle:"untitled"', 'intext:"lorem ipsum"',
                       'intitle:"page not found"', 'intext:"coming soon"']:
             out.append(Dork(f"{s} {probe}", "content",
-                            "Probe for thin / placeholder / error content that shouldn't rank."))
+                            "Поиск тонкого/заглушечного/ошибочного контента, который не должен ранжироваться."))
         return out
 
     def _duplication(self) -> List[Dork]:
         s = self._site()
         return [
             Dork(f"{s} {hint}", "duplication",
-                 "Detect parameterised / duplicate URL variants diluting crawl budget.")
+                 "Найти параметрические/дублирующиеся варианты URL, размывающие краулинговый бюджет.")
             for hint in _DUPLICATE_HINTS
         ]
 
@@ -126,12 +126,12 @@ class DorkGenerator:
         s = self._site()
         out = [
             Dork(f"{s} {hint}", "exposure",
-                 "Owner hygiene check: find accidentally-indexed sensitive artefacts.")
+                 "Проверка гигиены владельцем: найти случайно проиндексированные чувствительные артефакты.")
             for hint in _EXPOSURE_HINTS
         ]
         for ext in _SENSITIVE_EXTS:
             out.append(Dork(f"{s} filetype:{ext}", "exposure",
-                            f"Check for indexed {ext} files that likely shouldn't be public."))
+                            f"Проверить проиндексированные файлы {ext}, которые вряд ли должны быть публичными."))
         return out
 
     # -- public API ---------------------------------------------------------

@@ -24,16 +24,16 @@ from .dorks import ALL_CATEGORIES, DorkGenerator
 from .logging_setup import setup_logging
 from .search import AVAILABLE_PROVIDERS
 
-_BANNER = f"seoaudit v{__version__} — white-hat, single-domain SEO visibility auditor"
+_BANNER = f"seoaudit v{__version__} — «белый» аудит видимости в поиске для одного домена"
 
 
 def _add_common(p: argparse.ArgumentParser) -> None:
-    p.add_argument("domain", help="Target domain you own / are authorised to audit (e.g. example.com)")
-    p.add_argument("--config", help="Path to a JSON config file (CLI flags override it).")
+    p.add_argument("domain", help="Целевой домен, которым вы владеете / имеете право аудировать (напр. example.com)")
+    p.add_argument("--config", help="Путь к JSON-файлу конфигурации (флаги CLI имеют приоритет).")
     p.add_argument("--log-level", default="INFO",
                    choices=["DEBUG", "INFO", "WARNING", "ERROR"])
     p.add_argument("--no-subdomains", action="store_true",
-                   help="Restrict scope to the exact host, excluding sub-domains.")
+                   help="Ограничить область точным хостом, без поддоменов.")
 
 
 def _config_from_args(args: argparse.Namespace) -> Config:
@@ -82,24 +82,24 @@ def cmd_audit(args: argparse.Namespace) -> int:
     setup_logging(args.log_level, log_file=log_file)
 
     if not cfg.authorized:
-        print("ERROR: You must confirm authorisation with --i-am-authorized.\n"
-              "Only audit domains you own or are explicitly permitted to test.",
+        print("ОШИБКА: подтвердите разрешение флагом --i-am-authorized.\n"
+              "Аудируйте только домены, которыми владеете или на которые есть явное разрешение.",
               file=sys.stderr)
         return 2
     try:
         pipeline = AuditPipeline(cfg)
     except (PermissionError, ValueError) as exc:
-        print(f"ERROR: {exc}", file=sys.stderr)
+        print(f"ОШИБКА: {exc}", file=sys.stderr)
         return 2
 
     report = pipeline.run(resume=not args.no_resume)
     print("\n" + "=" * 60)
-    print(f"Audit of {report.domain} complete.")
+    print(f"Аудит домена {report.domain} завершён.")
     for k, v in report.stats.items():
         if k != "reports":
             print(f"  {k:22s}: {v}")
     for path in report.stats.get("reports", []):
-        print(f"  report                : {path}")
+        print(f"  отчёт                 : {path}")
     print("=" * 60)
     return 0
 
@@ -115,7 +115,7 @@ def cmd_dorks(args: argparse.Namespace) -> int:
     if args.json:
         print(json.dumps([d.to_dict() for d in dorks], ensure_ascii=False, indent=2))
     else:
-        print(f"# {len(dorks)} dorks for {scope.registrable}\n")
+        print(f"# {len(dorks)} запросов для {scope.registrable}\n")
         for d in dorks:
             print(f"[{d.category}] {d.query}")
     return 0
@@ -126,7 +126,7 @@ def cmd_web(args: argparse.Namespace) -> int:
 
     setup_logging(args.log_level)
     app = create_app()
-    print(f"{_BANNER}\nWeb UI on http://{args.host}:{args.port}  (Ctrl-C to stop)")
+    print(f"{_BANNER}\nВеб-интерфейс: http://{args.host}:{args.port}  (Ctrl-C для остановки)")
     app.run(host=args.host, port=args.port, debug=False)
     return 0
 
@@ -137,43 +137,43 @@ def build_parser() -> argparse.ArgumentParser:
     sub = parser.add_subparsers(dest="command", required=True)
 
     # audit
-    a = sub.add_parser("audit", help="Run the full audit pipeline.")
+    a = sub.add_parser("audit", help="Запустить полный конвейер аудита.")
     _add_common(a)
     a.add_argument("--provider", choices=AVAILABLE_PROVIDERS,
-                   help="Search back-end (default: manual/offline).")
-    a.add_argument("--manual-results", help="JSON file of results for --provider manual.")
-    a.add_argument("--keywords", help="Comma-separated target keywords.")
-    a.add_argument("--seed-paths", help="Comma-separated known page-type paths (e.g. blog,shop).")
-    a.add_argument("--categories", help=f"Comma-separated dork categories: {','.join(ALL_CATEGORIES)}")
-    a.add_argument("--max-dorks", type=int, help="Max number of search queries to run.")
-    a.add_argument("--results-per-dork", type=int, help="Results to request per query.")
-    a.add_argument("--max-pages", type=int, help="Max pages to fetch & analyse.")
+                   help="Источник поиска (по умолчанию: manual/офлайн).")
+    a.add_argument("--manual-results", help="JSON-файл результатов для --provider manual.")
+    a.add_argument("--keywords", help="Ключевые слова через запятую.")
+    a.add_argument("--seed-paths", help="Известные разделы сайта через запятую (напр. blog,shop).")
+    a.add_argument("--categories", help=f"Категории запросов через запятую: {','.join(ALL_CATEGORIES)}")
+    a.add_argument("--max-dorks", type=int, help="Макс. число поисковых запросов.")
+    a.add_argument("--results-per-dork", type=int, help="Сколько результатов запрашивать на запрос.")
+    a.add_argument("--max-pages", type=int, help="Макс. число загружаемых и анализируемых страниц.")
     a.add_argument("--rate-limit", type=float, dest="rate_limit",
-                   help="Requests/second to the target domain (default 1.0).")
-    a.add_argument("--concurrency", type=int, help="Parallel page fetches (default 4).")
-    a.add_argument("--contact-email", help="Advertise a contact address in a From: header.")
-    a.add_argument("--formats", help="Report formats: json,html,pdf (default json,html).")
-    a.add_argument("--output", help="Output directory.")
-    a.add_argument("--no-analyze", action="store_true", help="Collect only; skip page analysis.")
+                   help="Запросов в секунду к целевому домену (по умолчанию 1.0).")
+    a.add_argument("--concurrency", type=int, help="Параллельных загрузок страниц (по умолчанию 4).")
+    a.add_argument("--contact-email", help="Указать контактный адрес в заголовке From:.")
+    a.add_argument("--formats", help="Форматы отчёта: json,html,pdf (по умолчанию json,html).")
+    a.add_argument("--output", help="Каталог для результатов.")
+    a.add_argument("--no-analyze", action="store_true", help="Только сбор; без анализа страниц.")
     a.add_argument("--no-robots", action="store_true",
-                   help="Do not fetch/respect robots.txt (use only on your own site, sparingly).")
-    a.add_argument("--no-resume", action="store_true", help="Ignore any existing checkpoint.")
+                   help="Не загружать/не соблюдать robots.txt (только для своего сайта, осторожно).")
+    a.add_argument("--no-resume", action="store_true", help="Игнорировать существующий чекпоинт.")
     a.add_argument("--i-am-authorized", action="store_true",
-                   help="Confirm you own or are authorised to audit this domain (required).")
+                   help="Подтвердить право на аудит этого домена (обязательно).")
     a.set_defaults(func=cmd_audit)
 
     # dorks
-    d = sub.add_parser("dorks", help="Generate and print search queries only.")
+    d = sub.add_parser("dorks", help="Только сгенерировать и вывести поисковые запросы.")
     _add_common(d)
-    d.add_argument("--keywords", help="Comma-separated target keywords.")
-    d.add_argument("--seed-paths", help="Comma-separated known page-type paths.")
-    d.add_argument("--categories", help=f"Comma-separated categories: {','.join(ALL_CATEGORIES)}")
+    d.add_argument("--keywords", help="Ключевые слова через запятую.")
+    d.add_argument("--seed-paths", help="Известные разделы сайта через запятую.")
+    d.add_argument("--categories", help=f"Категории через запятую: {','.join(ALL_CATEGORIES)}")
     d.add_argument("--max-dorks", type=int, default=60)
-    d.add_argument("--json", action="store_true", help="Emit JSON instead of text.")
+    d.add_argument("--json", action="store_true", help="Выводить JSON вместо текста.")
     d.set_defaults(func=cmd_dorks)
 
     # web
-    w = sub.add_parser("web", help="Launch the local web interface.")
+    w = sub.add_parser("web", help="Запустить локальный веб-интерфейс.")
     w.add_argument("--host", default="127.0.0.1")
     w.add_argument("--port", type=int, default=8000)
     w.add_argument("--log-level", default="INFO",
