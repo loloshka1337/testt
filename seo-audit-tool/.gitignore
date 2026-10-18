@@ -6,10 +6,25 @@ __pycache__/
 build/
 dist/
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.coverage
+htmlcov/
 .venv/
 venv/
+
+# Secrets / local env (API keys are read from the environment)
+.env
+.env.*
 
 # Tool runtime output
 seo-audit-output/
 *.log
 state.json
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+*.swp
