@@ -4,11 +4,12 @@ Everything the tool touches must belong to the one authorised target domain.
 This module normalises URLs, derives the registrable domain, and answers the
 question "is this URL in scope?". It deliberately has no network side effects.
 
-The registrable-domain logic uses a small built-in list of common multi-label
-public suffixes (``co.uk`` etc.). It is a heuristic — for exhaustive coverage a
-full Public Suffix List could be plugged in — but it is conservative: when in
-doubt it treats fewer things as "same site", which is the safe direction for a
-scoping guard.
+The registrable-domain logic uses the Public Suffix List (ICANN *and* private
+sections, e.g. ``com.ru``, ``co.uk``, ``github.io``) via ``tldextract``'s
+bundled snapshot. No network fetch and no disk cache are used at runtime.
+When a host has no registrable part (a bare public suffix such as ``com.ru``,
+``localhost``, an IP address) the host itself is returned, so scope never
+widens beyond what was explicitly given.
 """
 
 from __future__ import annotations
@@ -17,13 +18,21 @@ from dataclasses import dataclass
 from typing import Optional
 from urllib.parse import urlparse, urlunparse
 
-# Common two-label public suffixes. Not exhaustive by design; extend as needed.
-_MULTI_LABEL_SUFFIXES = {
-    "co.uk", "org.uk", "gov.uk", "ac.uk", "me.uk",
-    "com.au", "net.au", "org.au", "gov.au", "edu.au",
-    "co.nz", "com.br", "com.mx", "co.jp", "co.kr", "co.in",
-    "com.cn", "com.sg", "com.tr", "com.ua", "co.za",
-}
+import tldextract
+
+_extractor: Optional["tldextract.TLDExtract"] = None
+
+
+def _get_extractor() -> "tldextract.TLDExtract":
+    """Offline PSL extractor: bundled snapshot only, private suffixes included."""
+    global _extractor
+    if _extractor is None:
+        _extractor = tldextract.TLDExtract(
+            suffix_list_urls=(),  # never fetch the PSL over the network
+            cache_dir=None,  # no on-disk cache writes
+            include_psl_private_domains=True,  # github.io, blogspot.com, ...
+        )
+    return _extractor
 
 
 def normalize_host(host: str) -> str:
@@ -41,16 +50,20 @@ def registrable_domain(host: str) -> str:
     """Return the registrable ("apex") domain for a hostname.
 
     ``blog.shop.example.co.uk`` -> ``example.co.uk``;
-    ``a.example.com`` -> ``example.com``.
+    ``a.example.com`` -> ``example.com``;
+    ``shop.example.com.ru`` -> ``example.com.ru``;
+    ``user.github.io`` -> ``user.github.io``.
     """
     host = normalize_host(host)
     if not host or "." not in host:
         return host
-    labels = host.split(".")
-    last_two = ".".join(labels[-2:])
-    if last_two in _MULTI_LABEL_SUFFIXES and len(labels) >= 3:
-        return ".".join(labels[-3:])
-    return last_two
+    ext = _get_extractor()(host)
+    registrable = getattr(ext, "top_domain_under_public_suffix", None)
+    if registrable is None:  # tldextract < 5.3
+        registrable = ext.registered_domain
+    # No registrable part (bare public suffix, IP, unknown): stay on the exact
+    # host rather than widening scope.
+    return registrable or host
 
 
 def canonicalize_url(url: str) -> Optional[str]:
