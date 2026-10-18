@@ -12,6 +12,23 @@
 > подтверждения полномочий. Используйте только на ресурсах, которыми владеете
 > или на аудит которых есть письменное разрешение.
 
+**EN summary.** `seoaudit` is a white-hat SEO audit and search-visibility
+monitoring tool for a single domain you own or are authorised to audit. It
+generates `site:`-scoped queries (`dorks.py`), collects results through official
+APIs (Google Programmable Search, SerpApi) or an offline export (`manual`
+provider), analyses each in-scope page (status/redirects, robots meta,
+canonical, thin content, near-duplicates, accidental exposure), clusters pages
+and outputs prioritised recommendations as HTML/JSON (optional PDF) reports.
+It refuses to run without `--i-am-authorized`, respects `robots.txt` and is
+rate-limited. Quick start:
+
+```bash
+pip install -r requirements.txt
+python -m seoaudit audit example.com --provider manual \
+  --manual-results examples/sample_results.json --i-am-authorized
+python -m pytest -q   # offline test suite (needs: pip install pytest)
+```
+
 ---
 
 ## Почему это «белый» подход
@@ -133,6 +150,12 @@ python -m seoaudit web           # откройте http://127.0.0.1:8000
 Отчёты появятся в `--output` (по умолчанию `seo-audit-output/`): `report.html`,
 `report.json`, а также `audit.log` и чекпоинт `state.json`.
 
+> **Известная особенность (v0.1.0):** при запуске из CLI с `--output <dir>`
+> чекпоинт `state.json` всё равно пишется в `seo-audit-output/state.json`
+> относительно текущего каталога (путь к чекпоинту вычисляется до применения
+> `--output`). Отчёты и `audit.log` при этом попадают в `<dir>`. Явно задать
+> путь можно ключом `state_file` в JSON-конфиге.
+
 ---
 
 ## Сбор результатов из живого поиска (опционально)
@@ -194,7 +217,14 @@ python -m seoaudit audit example.com --config examples/config.example.json --i-a
 ## Структура проекта
 
 ```
-seoaudit/
+seo-audit-tool/
+├── pyproject.toml    # метаданные пакета, extras: web / pdf / dev
+├── requirements.txt  # зависимости (включая flask для веб-интерфейса)
+├── examples/         # config.example.json, sample_results.json
+├── tests/            # офлайн-тесты pytest
+└── seoaudit/
+├── __init__.py       # фасад: run_audit, generate_dorks, build_insights
+├── __main__.py       # точка входа `python -m seoaudit`
 ├── cli.py            # CLI на argparse (audit | dorks | web)
 ├── pipeline.py       # оркестрация этапов + возобновление + прерывание
 ├── config.py         # Config, вежливые значения по умолчанию, скрытие секретов
@@ -207,6 +237,8 @@ seoaudit/
 ├── http_client.py    # вежливый HTTP-клиент (robots, ротация UA, повторы)
 ├── ratelimit.py      # ограничитель частоты (token bucket)
 ├── state.py          # возобновляемый чекпоинт
+├── models.py         # модели данных (Dork, SearchResult, PageAnalysis, AuditReport …)
+├── logging_setup.py  # настройка логирования
 ├── report/           # писатели JSON + HTML (+ PDF) и шаблон
 ├── search/           # интерфейс провайдеров + google_cse / serpapi / manual
 └── web/              # панель управления на Flask
@@ -217,9 +249,12 @@ seoaudit/
 ## Разработка
 
 ```bash
-pip install pytest
+pip install -r requirements.txt pytest   # или: pip install -e ".[dev]"
 python -m pytest -q
 ```
+
+CI (`.github/workflows/python-tests.yml` в корне репозитория) выполняет то же
+самое на Python 3.9 / 3.11 / 3.12.
 
 Набор тестов работает полностью офлайн (без сети и API-ключей) и покрывает
 ограничение по домену, генерацию дорков, сбор/дедупликацию, анализ страниц
@@ -237,4 +272,4 @@ python -m pytest -q
 
 ## Лицензия
 
-Apache-2.0 (в соответствии с окружающим репозиторием).
+Apache-2.0 — см. [LICENSE](../LICENSE) в корне репозитория.
